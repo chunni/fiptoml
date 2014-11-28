@@ -1,0 +1,31 @@
+#this is an TOML doc
+title = "TOML Example"
+files = [
+    "chapter 1",
+    "chapter 2"
+]
+
+[owner]
+name = "Lance Uppercut"
+dob = 1979-05-27T07:32:00-08:00 # First class dates? Why not?
+tags = [
+		"tag 1",
+		"tag 2"
+	]
+
+[database]
+server = "192.168.1.1"
+ports = [ 8001, 8001, 8002 ]
+connection_max = 5000
+enabled = true
+
+[[products]]
+name = "Hammer"
+sku = 738594937
+
+[[products]]
+
+[[products]]
+name = "Nail"
+sku = 284758393
+color = "gray"
