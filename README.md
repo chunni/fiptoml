@@ -1,7 +1,5 @@
 #fiptoml - Golang TOML parser
 
-[![Build Status](https://travis-ci.org/chunni/fiptoml.png?branch=master)](https://travis-ci.org/chunni/fiptoml)
-
 fiptoml is a [TOML](https://github.com/toml-lang/toml) parser for Golang. It designed to be fast, reliable, and easy-to-use.
 
 This library is compatible with TOML version [v0.3.1](https://github.com/toml-lang/toml/blob/master/versions/toml-v0.3.1.md).
@@ -53,7 +51,7 @@ files := toml.GetStringArray("files")
 fmt.Println(files)
 ```
 
-Please refer to the test file `fiptoml_test.go` for working examples.
+Please refer to the test file [fiptoml_test.go](https://github.com/chunni/fiptoml/blob/master/fiptoml_test.go) for working examples.
 
 ### API list
 - `func Load(path string) (doc *toml, err error)`
