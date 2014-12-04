@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strings"
 	"time"
-	//	"fmt"
 	"fmt"
-	//	"reflect"
+	"bufio"
+	"strconv"
 )
 
 var (
@@ -15,15 +15,15 @@ var (
 	errNoKey         = errors.New("No key name")
 )
 
-type toml struct {
+type Toml struct {
 	dict map[string]interface{}
 }
 
-func newToml() *toml {
-	return &toml{make(map[string]interface{})}
+func NewToml() *Toml {
+	return &Toml{make(map[string]interface{})}
 }
 
-func (t *toml) GetStringEx(key string) (val string, err error) {
+func (t *Toml) GetStringEx(key string) (val string, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 
 	switch v := doc.dict[fKey].(type) {
@@ -37,7 +37,7 @@ func (t *toml) GetStringEx(key string) (val string, err error) {
 	return
 }
 
-func (t *toml) GetString(key string, dflt string) string {
+func (t *Toml) GetString(key string, dflt string) string {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		fmt.Println("err:", err)
@@ -52,7 +52,7 @@ func (t *toml) GetString(key string, dflt string) string {
 	}
 }
 
-func (t *toml) GetBoolEx(key string) (val bool, err error) {
+func (t *Toml) GetBoolEx(key string) (val bool, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
 	case bool:
@@ -65,7 +65,7 @@ func (t *toml) GetBoolEx(key string) (val bool, err error) {
 	return
 }
 
-func (t *toml) GetBool(key string, dflt bool) bool {
+func (t *Toml) GetBool(key string, dflt bool) bool {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return dflt
@@ -79,7 +79,7 @@ func (t *toml) GetBool(key string, dflt bool) bool {
 	}
 }
 
-func (t *toml) GetIntEx(key string) (val int, err error) {
+func (t *Toml) GetIntEx(key string) (val int, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
 	case int:
@@ -92,7 +92,7 @@ func (t *toml) GetIntEx(key string) (val int, err error) {
 	return
 }
 
-func (t *toml) GetInt(key string, dflt int) int {
+func (t *Toml) GetInt(key string, dflt int) int {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return dflt
@@ -105,7 +105,7 @@ func (t *toml) GetInt(key string, dflt int) int {
 	}
 }
 
-func (t *toml) GetFloatEx(key string) (val float64, err error) {
+func (t *Toml) GetFloatEx(key string) (val float64, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
 	case float64:
@@ -118,7 +118,7 @@ func (t *toml) GetFloatEx(key string) (val float64, err error) {
 	return
 }
 
-func (t *toml) GetFloat(key string, dflt float64) float64 {
+func (t *Toml) GetFloat(key string, dflt float64) float64 {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return dflt
@@ -131,7 +131,7 @@ func (t *toml) GetFloat(key string, dflt float64) float64 {
 	}
 }
 
-func (t *toml) GetDatetimeEx(key string) (val time.Time, err error) {
+func (t *Toml) GetDatetimeEx(key string) (val time.Time, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
 	case time.Time:
@@ -144,7 +144,7 @@ func (t *toml) GetDatetimeEx(key string) (val time.Time, err error) {
 	return
 }
 
-func (t *toml) GetDatetime(key string, dflt time.Time) time.Time {
+func (t *Toml) GetDatetime(key string, dflt time.Time) time.Time {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return dflt
@@ -157,7 +157,7 @@ func (t *toml) GetDatetime(key string, dflt time.Time) time.Time {
 	}
 }
 
-func (t *toml) GetArrayEx(key string) (array interface{}, err error) {
+func (t *Toml) GetArrayEx(key string) (array interface{}, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch arr := doc.dict[fKey].(type) {
 	case []string:
@@ -178,7 +178,7 @@ func (t *toml) GetArrayEx(key string) (array interface{}, err error) {
 	return
 }
 
-func (t *toml) GetStringArray(key string) []string {
+func (t *Toml) GetStringArray(key string) []string {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return nil
@@ -192,7 +192,21 @@ func (t *toml) GetStringArray(key string) []string {
 	}
 }
 
-func (t *toml) GetIntArray(key string) []int {
+func (t *Toml) GetBoolArray(key string) []bool {
+	fKey, doc, err := getFinalKeyAndTable(key, t)
+	if err != nil {
+		return nil
+	}
+
+	switch arr := doc.dict[fKey].(type) {
+	case []bool:
+		return arr
+	default:
+		return nil
+	}
+}
+
+func (t *Toml) GetIntArray(key string) []int {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
 		return nil
@@ -200,6 +214,34 @@ func (t *toml) GetIntArray(key string) []int {
 
 	switch arr := doc.dict[fKey].(type) {
 	case []int:
+		return arr
+	default:
+		return nil
+	}
+}
+
+func (t *Toml) GetFloatArray(key string) []float64 {
+	fKey, doc, err := getFinalKeyAndTable(key, t)
+	if err != nil {
+		return nil
+	}
+
+	switch arr := doc.dict[fKey].(type) {
+	case []float64:
+		return arr
+	default:
+		return nil
+	}
+}
+
+func (t *Toml) GetDatetimeArray(key string) []time.Time {
+	fKey, doc, err := getFinalKeyAndTable(key, t)
+	if err != nil {
+		return nil
+	}
+
+	switch arr := doc.dict[fKey].(type) {
+	case []time.Time:
 		return arr
 	default:
 		return nil
@@ -229,10 +271,10 @@ func (t *toml) GetIntArray(key string) []int {
 
 }*/
 
-func (t *toml) GetTableToml(key string) (table *toml, err error) {
+func (t *Toml) GetTableToml(key string) (table *Toml, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
-	case *toml:
+	case *Toml:
 		table = v
 	case nil:
 		//err = errValueNotFound
@@ -243,10 +285,10 @@ func (t *toml) GetTableToml(key string) (table *toml, err error) {
 	return
 }
 
-func (t *toml) GetTableArray(key string) (array []*toml, err error) {
+func (t *Toml) GetTableArray(key string) (array []*Toml, err error) {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	switch v := doc.dict[fKey].(type) {
-	case []*toml:
+	case []*Toml:
 		array = v
 	case nil:
 		err = errValueNotFound
@@ -257,7 +299,7 @@ func (t *toml) GetTableArray(key string) (array []*toml, err error) {
 	return
 }
 
-func getFinalKeyAndTable(key string, doc *toml) (finalKey string, finalToml *toml, err error) {
+func getFinalKeyAndTable(key string, doc *Toml) (finalKey string, finalToml *Toml, err error) {
 	if len(key) == 0 {
 		err = errNoKey
 		return
@@ -277,7 +319,7 @@ func getFinalKeyAndTable(key string, doc *toml) (finalKey string, finalToml *tom
 			return
 		}
 		switch v := doc.dict[keys[0]].(type) {
-		case *toml:
+		case *Toml:
 			finalKey, finalToml, err = getFinalKeyAndTable(keys[1], v)
 		default:
 			err = errValueNotFound
@@ -287,15 +329,23 @@ func getFinalKeyAndTable(key string, doc *toml) (finalKey string, finalToml *tom
 	return
 }
 
-/*func (t toml) getStruct(key string, tp reflect.Type) (val interface {}, err error) {
+/*
+func (t toml) getStruct(key string, st interface {}) ( err error) {
 	switch doc := t.dict[key].(type){
 	case *toml:
-		v := reflect.New(tp)
+		v := reflect.ValueOf(st).Elem()
+		tp := v.Type()
 		for i:=0; i< v.NumField(); i++ {
 			f := v.Field(i)
-			switch t := f.Type() {
+			name := tp.Field(i).Name
+			switch f.Type() {
 			case reflect.String:
-				f.SetString(doc[f.Name])
+				s, e := doc.GetString(name)
+				if e != nil {
+					f.SetString(s)
+				}
+				case reflect.Int
+
 
 			}
 		}
@@ -309,4 +359,99 @@ func getFinalKeyAndTable(key string, doc *toml) (finalKey string, finalToml *tom
 		err = errTypeMismatch
 	}
 	return
+}
+*/
+
+func (t *Toml) SetValue(key string, v interface {}) {
+	t.dict[key] = v
+}
+/*
+func (t *Toml) SetTable(key string, v *Toml) {
+
 }*/
+
+func (t *Toml) WriteTo(writer *bufio.Writer) {
+	for key := range t.dict {
+		switch val := t.dict[key].(type) {
+		case []*Toml:
+			fmt.Fprint(writer,"[[",key,"]]\n")
+			for _,st := range val {
+				st.WriteTo(writer)
+			}
+		case *Toml:
+			fmt.Fprint(writer, "[",key,"]\n")
+			val.WriteTo(writer)
+		default:
+			fmt.Fprintln(writer,key,"=",wrapVal(val))
+		}
+	}
+}
+
+func wrapVal(val interface {}) string {
+	switch v := val.(type) {
+	case string:
+		return fmt.Sprint("\"",v,"\"")
+	case time.Time:
+		return v.Format(time.RFC3339)
+	case []time.Time:
+		s := "["
+		l := len(v)
+		for i:=0;i < l;i++ {
+			if i > 0 {
+				s += ","
+			}
+			s += v[i].Format(time.RFC3339)
+		}
+		s += "]"
+		return s
+	case []int:
+		s := "["
+		l := len(v)
+		for i:=0;i < l;i++ {
+			if i > 0 {
+				s += ","
+			}
+			s += strconv.Itoa(v[i])
+		}
+		s += "]"
+		return s
+	case []float64:
+		s := "["
+		l := len(v)
+		for i:=0;i < l;i++ {
+			if i > 0 {
+				s += ","
+			}
+			s += fmt.Sprint(v[i])
+		}
+		s += "]"
+		return s
+	case []bool:
+		s := "["
+		l := len(v)
+		for i:=0;i < l;i++ {
+			if i > 0 {
+				s += ","
+			}
+			s += strconv.FormatBool(v[i])
+		}
+		s += "]"
+		return s
+	case []string:
+		s := "["
+		l := len(v)
+		for i:=0;i < l;i++ {
+			if i > 0 {
+				s += ","
+			}
+			s += fmt.Sprint("\"",v[i],"\"")
+			fmt.Println("wrap:",i,l,s)
+		}
+		s += "]"
+		return s
+	default:
+		return fmt.Sprint(v)
+	}
+}
+
+

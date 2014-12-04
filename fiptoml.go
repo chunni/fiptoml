@@ -1,46 +1,20 @@
+/*
+Package fiptoml provides fast, reliable and easy-to-use parser for TOML doc.
+ */
 package fiptoml
 
 import (
-	"errors"
-	"fmt"
 	"io/ioutil"
-	"regexp"
 	"unicode/utf8"
+	"bufio"
+	"os"
 )
 
-var (
-	errInvalidToml = errors.New("invalid TOML doc")
-
-	errInvalidTableKey   = errors.New("invalid table key name")
-	errInvalidKeyName    = errors.New("invalid key name")
-	errUtf8              = errors.New("not valid UTF-8 content")
-	errEmptyKey          = errors.New("key name is empty")
-	errBool              = errors.New("bool should be either true or false")
-	errNumber            = errors.New("number like value can only be int, float or datetime(RFC3399)")
-	errMultiString       = errors.New("invalid multi-line string")
-	errStringSyntaxError = errors.New("string syntax error")
-	errArray             = errors.New("Date types in an array should NOT be mixed")
-
-	multiLineSkipR = regexp.MustCompile(`\\[\n\r\t\f ]+`)
-	quoteLineR     = regexp.MustCompile(`\n`)
-	intR           = regexp.MustCompile(`^[+-]?(?:0|[1-9][0-9]*)$`)
-	floatR         = regexp.MustCompile(`-?(?:0|[1-9][0-9]*)\.[0-9]+$`)
-	datatimeR      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?(Z|[+-]\d{2}:\d{2})$`)
-)
-
-func errDuplicatedKey(key string) error {
-	return errors.New(fmt.Sprint("Duplicated key: ", key))
-}
-
-func errUnsupportedValue(key string) error {
-	return errors.New(fmt.Sprint("unsupported value type for key: ", key))
-}
-
-func Parse(input []byte) (doc *toml, err error) {
-	doc = newToml()
+func Parse(input []byte) (doc *Toml, err error) {
+	doc = NewToml()
 	idx, delta := 0, 0
-
-	for idx < len(input) {
+	l := len(input)
+	for idx < l {
 		idx += skipLeft(input[idx:])
 		r, w := utf8.DecodeRune(input[idx:])
 		switch r {
@@ -78,7 +52,7 @@ KeyErr:
 	return
 }
 
-func Load(path string) (doc *toml, err error) {
+func Load(path string) (doc *Toml, err error) {
 	bytes, err := ioutil.ReadFile(path)
 	if err != nil {
 		return
@@ -88,6 +62,25 @@ func Load(path string) (doc *toml, err error) {
 	return
 }
 
-func ParseString(input string) (doc *toml, err error) {
+func ParseString(input string) (doc *Toml, err error) {
 	return Parse([]byte(input))
 }
+
+func Write(doc *Toml, path string) (err error) {
+	if doc == nil {
+		return
+	}
+
+	file, err := os.Create(path)
+	defer file.Close()
+
+	if err != nil {
+		return
+	}
+
+	writer := bufio.NewWriter(file)
+	doc.WriteTo(writer)
+	err = writer.Flush()
+	return
+}
+

@@ -1,4 +1,4 @@
-#fiptoml - Golang TOML parser
+#fiptoml - Golang TOML parser(deserializer)/writer(serializer)
 
 fiptoml is a [TOML](https://github.com/toml-lang/toml) parser for Golang. It designed to be fast, reliable, and easy-to-use.
 
@@ -18,45 +18,68 @@ And, OK, I admit, I'm just too lazy to get to YAML, which looks scary to me.
 
 `import "github.com/chuni/fiptoml"`
 
-#### Parse your config
+#### Parse(deserialize) TOML
 
 To load a config file:
 
 ```
 toml, err := fiptoml.Load("./config/config.toml")
-title := toml.GetString("title","")
 ```
-
-To parse a string:
-
-```
-toml, err := ParseString(example)
-if err != nil {
-    fmt.Println("ParseFile should work")
-    return
-}
-owner := toml.GetString("owner.name","")
-fmt.Println(owner)
-```
-
 Or, to parse a byte array:
 
 ```
-toml, err := Parse([]byte(example))
-if err != nil {
-	fmt.Println("ParseFile should work")
-	return
-}
-files := toml.GetStringArray("files")
-fmt.Println(files)
+toml, err := fiptoml.Parse([]byte(example))
 ```
 
-Please refer to the test file [fiptoml_test.go](https://github.com/chunni/fiptoml/blob/master/fiptoml_test.go) for working examples.
+And, to parse a string:
+
+```
+toml, err := fiptoml.ParseString(example)
+```
+
+Then, get the values.
+
+You may get value quickly by set a default value in case something goes wrong.
+```
+title := toml.GetString("title","")
+owner := toml.GetString("owner.name","")
+files := toml.GetStringArray("files")
+```
+Or, you may check the error yourself to ensure your config file is valid.
+```
+title, err := toml.GetStringEx("title")
+if err != nil {
+    //handle the error
+}
+```
+
+#### Write/serialize TOML
+To form a TOML document:
+
+```
+toml := NewToml()
+toml.SetValue("title", "A Perfect Trip")
+toml.SetValue("days", 21)
+toml.SetValue("start", time.Now())
+toml.SetValue("enabled",true)
+toml.SetValue("guys",[]string{"Tony","Tim","Abby"})
+```
+Then you may serialize it to a writer:
+```
+toml.WriteTo(writer)
+```
+Or, directly write it to a file.
+```
+fiptoml.Write(toml,"./config/out.toml")
+```
+
+Please refer to the test file `fiptoml_test.go` for working examples.
 
 ### API list
 - `func Load(path string) (doc *toml, err error)`
 - `func Parse(input []byte) (doc *toml, err error)`
 - `func ParseString(input string) (doc *toml, err error)`
+- `func Write(doc *Toml, path string) (err error)`
 
 `type toml struct`
 
@@ -77,3 +100,4 @@ Please refer to the test file [fiptoml_test.go](https://github.com/chunni/fiptom
 - `func (t *toml) GetDatetimeArray(key string) []time.Time`
 - `func (t *toml) GetTableToml(key string) (table *toml, err error)`
 - `func (t *toml) GetTableArray(key string) (array []*toml, err error)`
+- `func (t *Toml) WriteTo(writer *bufio.Writer)`

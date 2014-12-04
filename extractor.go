@@ -7,22 +7,54 @@ import (
 	"strings"
 	"time"
 	"unicode"
+	"errors"
+	"regexp"
 )
 
-func extractTableArray(input []byte, doc *toml) (idx int, err error) {
+
+var (
+	errInvalidToml = errors.New("invalid TOML doc")
+
+	errInvalidTableKey   = errors.New("invalid table key name")
+	errInvalidKeyName    = errors.New("invalid key name")
+	errUtf8              = errors.New("not valid UTF-8 content")
+	errEmptyKey          = errors.New("key name is empty")
+	errBool              = errors.New("bool should be either true or false")
+	errNumber            = errors.New("number like value can only be int, float or datetime(RFC3399)")
+	errMultiString       = errors.New("invalid multi-line string")
+	errStringSyntaxError = errors.New("string syntax error")
+	errArray             = errors.New("Date types in an array should NOT be mixed")
+
+	multiLineSkipR = regexp.MustCompile(`\\[\n\r\t\f ]+`)
+	quoteLineR     = regexp.MustCompile(`\n`)
+	intR           = regexp.MustCompile(`^[+-]?(?:0|[1-9][0-9]*)$`)
+	floatR         = regexp.MustCompile(`-?(?:0|[1-9][0-9]*)\.[0-9]+$`)
+	datatimeR      = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(.\d+)?(Z|[+-]\d{2}:\d{2})$`)
+)
+
+func errDuplicatedKey(key string) error {
+	return errors.New(fmt.Sprint("Duplicated key: ", key))
+}
+
+func errUnsupportedValue(key string) error {
+	return errors.New(fmt.Sprint("unsupported value type for key: ", key))
+}
+
+
+func extractTableArray(input []byte, doc *Toml) (idx int, err error) {
 	name, idx, err := extractTableName(input, true)
 	if err != nil {
 		return
 	}
 
 	//array, err :=doc.GetTableArray(name)
-	subDoc := newToml()
+	subDoc := NewToml()
 	delta := 0
 
 	switch array := doc.dict[name].(type) {
 	case nil:
-		doc.dict[name] = []*toml{subDoc}
-	case []*toml:
+		doc.dict[name] = []*Toml{subDoc}
+	case []*Toml:
 		doc.dict[name] = append(array, subDoc)
 	default:
 		goto DupKey
@@ -37,7 +69,7 @@ DupKey:
 	return
 }
 
-func extractTable(input []byte, doc *toml) (idx int, err error) {
+func extractTable(input []byte, doc *Toml) (idx int, err error) {
 	name, idx, err := extractTableName(input, false)
 
 	delta := 0
@@ -45,12 +77,12 @@ func extractTable(input []byte, doc *toml) (idx int, err error) {
 		return
 	}
 
-	var subDoc *toml
+	var subDoc *Toml
 	switch v := doc.dict[name].(type) {
 	case nil:
-		subDoc = newToml()
+		subDoc = NewToml()
 		doc.dict[name] = subDoc
-	case *toml:
+	case *Toml:
 		subDoc = v
 	default:
 		goto DupKey
@@ -64,8 +96,9 @@ DupKey:
 	return
 }
 
-func extractKeyValueSection(input []byte, doc *toml) (idx int, err error) {
-	for idx < len(input) {
+func extractKeyValueSection(input []byte, doc *Toml) (idx int, err error) {
+	l := len(input)
+	for idx < l {
 		shouldEnd, delta := isSectionEnd(input[idx:])
 		idx += delta
 		if shouldEnd {
@@ -79,7 +112,7 @@ func extractKeyValueSection(input []byte, doc *toml) (idx int, err error) {
 	return
 }
 
-func extractKeyValue(input []byte, doc *toml) (idx int, err error) {
+func extractKeyValue(input []byte, doc *Toml) (idx int, err error) {
 	key, idx := extractKey(input)
 	if idx == 0 {
 		err = errEmptyKey
@@ -104,8 +137,9 @@ func extractKeyValue(input []byte, doc *toml) (idx int, err error) {
 
 func extractKey(input []byte) (key string, idx int) {
 	i := 0
+	l := len(input)
 L:
-	for i < len(input) {
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case ' ', '\t', '=':
@@ -318,8 +352,9 @@ ErrArray:
 func extractTableName(input []byte, isArray bool) (name string, idx int, err error) {
 	//todo: build the whole thing for multiple ...
 	i := 0
+	l := len(input)
 L:
-	for i < len(input) {
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case ']':
@@ -394,7 +429,8 @@ func isStringEnd(r rune) bool {
 
 func isSectionEnd(input []byte) (bool, int) {
 	i := 0
-	for i < len(input) {
+	l := len(input)
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case '\n', '\r', '\f':
@@ -413,7 +449,8 @@ func isSectionEnd(input []byte) (bool, int) {
 //Skip comments and space and new line before a key
 func skipLeft(input []byte) (skip int) {
 	i := 0
-	for i < len(input) {
+	l := len(input)
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		if r == '#' {
 			i += skipComments(input[i:])
@@ -458,7 +495,8 @@ func skipUntilSpace(input []byte) int {
 
 func skipIf(input []byte, f func(rune) bool) int {
 	i := 0
-	for i < len(input) {
+	l := len(input)
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		if !f(r) {
 			return i + w - 1
@@ -471,7 +509,8 @@ func skipIf(input []byte, f func(rune) bool) int {
 
 func skipUntil(input []byte, f func(rune) bool, include bool) int {
 	i := 0
-	for i < len(input) {
+	l := len(input)
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		if f(r) {
 			if include {
@@ -500,7 +539,8 @@ func sliceEquals(s1 []byte, s2 []byte) bool {
 
 func skipUntilChar(input []byte, char rune) int {
 	i := 0
-	for i < len(input) {
+	l := len(input)
+	for i < l {
 		r, w := utf8.DecodeRune(input[i:])
 		if r == char {
 			return i
