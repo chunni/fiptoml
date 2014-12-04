@@ -20,24 +20,24 @@ And, OK, I admit, I'm just too lazy to get to YAML, which looks scary to me.
 
 #### Parse(deserialize) TOML
 
-To load a config file:
+**Load a config file:**
 
 ```
 toml, err := fiptoml.Load("./config/config.toml")
 ```
-Or, to parse a byte array:
+**Parse a byte array:**
 
 ```
 toml, err := fiptoml.Parse([]byte(example))
 ```
 
-And, to parse a string:
+**Parse a string:**
 
 ```
 toml, err := fiptoml.ParseString(example)
 ```
 
-Then, get the values.
+**Get the values:**
 
 You may get value quickly by set a default value in case something goes wrong.
 ```
@@ -54,7 +54,7 @@ if err != nil {
 ```
 
 #### Write/serialize TOML
-To form a TOML document:
+**Form a TOML document:**
 
 ```
 toml := NewToml()
@@ -64,16 +64,16 @@ toml.SetValue("start", time.Now())
 toml.SetValue("enabled",true)
 toml.SetValue("guys",[]string{"Tony","Tim","Abby"})
 ```
-Then you may serialize it to a writer:
+**Serialize it to a writer:**
 ```
 toml.WriteTo(writer)
 ```
-Or, directly write it to a file.
+**Directly write it to a file:**
 ```
 fiptoml.Write(toml,"./config/out.toml")
 ```
 
-Please refer to the test file `fiptoml_test.go` for working examples.
+Please refer to the test file [fiptoml_test.go](https://github.com/chunni/fiptoml/blob/master/fiptoml_test.go) for working examples.
 
 ### API list
 - `func Load(path string) (doc *toml, err error)`
