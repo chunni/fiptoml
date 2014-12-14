@@ -13,8 +13,8 @@ import (
 func Parse(input []byte) (doc *Toml, err error) {
 	doc = NewToml()
 	idx, delta := 0, 0
-	l := len(input)
-	for idx < l {
+
+	for idx < len(input) {
 		idx += skipLeft(input[idx:])
 		r, w := utf8.DecodeRune(input[idx:])
 		switch r {

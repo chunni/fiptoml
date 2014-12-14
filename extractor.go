@@ -97,8 +97,7 @@ DupKey:
 }
 
 func extractKeyValueSection(input []byte, doc *Toml) (idx int, err error) {
-	l := len(input)
-	for idx < l {
+	for idx < len(input) {
 		shouldEnd, delta := isSectionEnd(input[idx:])
 		idx += delta
 		if shouldEnd {
@@ -137,9 +136,8 @@ func extractKeyValue(input []byte, doc *Toml) (idx int, err error) {
 
 func extractKey(input []byte) (key string, idx int) {
 	i := 0
-	l := len(input)
 L:
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case ' ', '\t', '=':
@@ -352,9 +350,8 @@ ErrArray:
 func extractTableName(input []byte, isArray bool) (name string, idx int, err error) {
 	//todo: build the whole thing for multiple ...
 	i := 0
-	l := len(input)
 L:
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case ']':
@@ -392,8 +389,7 @@ InvalidKey:
 }
 
 func getTableValue(input []byte) (err error) {
-	length := len(input)
-	for i := 0; i < length; i++ {
+	for i := 0; i < len(input); i++ {
 		if input[i] == '\n' {
 			//if()
 		}
@@ -429,8 +425,7 @@ func isStringEnd(r rune) bool {
 
 func isSectionEnd(input []byte) (bool, int) {
 	i := 0
-	l := len(input)
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		switch r {
 		case '\n', '\r', '\f':
@@ -449,8 +444,7 @@ func isSectionEnd(input []byte) (bool, int) {
 //Skip comments and space and new line before a key
 func skipLeft(input []byte) (skip int) {
 	i := 0
-	l := len(input)
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		if r == '#' {
 			i += skipComments(input[i:])
@@ -495,8 +489,7 @@ func skipUntilSpace(input []byte) int {
 
 func skipIf(input []byte, f func(rune) bool) int {
 	i := 0
-	l := len(input)
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		if !f(r) {
 			return i + w - 1
@@ -509,8 +502,8 @@ func skipIf(input []byte, f func(rune) bool) int {
 
 func skipUntil(input []byte, f func(rune) bool, include bool) int {
 	i := 0
-	l := len(input)
-	for i < l {
+
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		if f(r) {
 			if include {
@@ -539,8 +532,7 @@ func sliceEquals(s1 []byte, s2 []byte) bool {
 
 func skipUntilChar(input []byte, char rune) int {
 	i := 0
-	l := len(input)
-	for i < l {
+	for i < len(input) {
 		r, w := utf8.DecodeRune(input[i:])
 		if r == char {
 			return i
