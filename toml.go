@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"bufio"
 	"strconv"
+	"reflect"
 )
 
 var (
@@ -237,6 +238,7 @@ func (t *Toml) GetFloatArray(key string) []float64 {
 func (t *Toml) GetDatetimeArray(key string) []time.Time {
 	fKey, doc, err := getFinalKeyAndTable(key, t)
 	if err != nil {
+		fmt.Println("key,err:",key,err)
 		return nil
 	}
 
@@ -454,4 +456,29 @@ func wrapVal(val interface {}) string {
 	}
 }
 
+//for test
+func IterateTomlDoc(doc *Toml) {
+	dict := doc.dict
+	count := len(dict)
+	fmt.Println("length of toml:", count)
+	for key := range dict {
+		switch val := dict[key].(type) {
+		case nil:
+			fmt.Println("empty value of: ", key)
+		case string:
+			fmt.Println(key, "=", val,"(string)")
+		case *Toml:
+			fmt.Println("Table:", key)
+			IterateTomlDoc(val)
+		case []*Toml:
+			fmt.Println("Array of tables:", key)
+		for i, v := range val {
+			fmt.Println("Table", i)
+			IterateTomlDoc(v)
+		}
+		default:
+			fmt.Println(key, "=", val,"(", reflect.TypeOf(val),")")
+		}
+	}
+}
 

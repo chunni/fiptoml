@@ -101,29 +101,3 @@ func TestWrite(t *testing.T) {
 	Write(toml,"./config/out.toml")
 }
 
-
-
-func iterateTomlDoc(doc *Toml) {
-	dict := doc.dict
-	count := len(dict)
-	fmt.Println("length of toml:", count)
-	for key := range dict {
-		switch val := dict[key].(type) {
-		case nil:
-			fmt.Println("empty value of: ", key)
-		case string:
-			fmt.Println(key, "=", val,"(string)")
-		case *Toml:
-			fmt.Println("Table:", key)
-			iterateTomlDoc(val)
-		case []*Toml:
-			fmt.Println("Array of tables:", key)
-			for i, v := range val {
-				fmt.Println("Table", i)
-				iterateTomlDoc(v)
-			}
-		default:
-			fmt.Println(key, "=", val,"(", reflect.TypeOf(val),")")
-		}
-	}
-}
